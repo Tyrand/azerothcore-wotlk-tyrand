@@ -969,7 +969,7 @@ bool WorldSession::CheckStableMaster(uint64 guid)
         if (!GetPlayer()->IsGameMaster() && !GetPlayer()->HasAuraType(SPELL_AURA_OPEN_STABLE))
         {
 #if defined(ENABLE_EXTRAS) && defined(ENABLE_EXTRA_LOGS)
-            sLog->outStaticDebug("Player (GUID:%u) attempt open stable in cheating way.", GUID_LOPART(guid));
+            sLog->outStaticDebug("Player (GUID:%u) attempted to open stable in a cheating way.", GUID_LOPART(guid));
 #endif
             return false;
         }

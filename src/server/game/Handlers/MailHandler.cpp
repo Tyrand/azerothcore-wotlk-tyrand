@@ -22,11 +22,16 @@
 
 bool WorldSession::CanOpenMailBox(uint64 guid)
 {
-    if (guid == _player->GetGUID())
+	if (!sWorld->getIntConfig(CONFIG_MAIL_ANTICHEAT))
+	{
+		return true;
+	}
+    else if (guid == _player->GetGUID())
     {
-        if (_player->GetSession()->GetSecurity() < SEC_MODERATOR)
+        //if (_player->GetSession()->GetSecurity() < SEC_MODERATOR)
+        if (_player->GetSession()->GetSecurity() < SEC_PLAYER)
         {
-            sLog->outError("%s attempt open mailbox in cheating way.", _player->GetName().c_str());
+            sLog->outError("%s attempted to open the mailbox in a cheating way.", _player->GetName().c_str());
             return false;
         }
     }

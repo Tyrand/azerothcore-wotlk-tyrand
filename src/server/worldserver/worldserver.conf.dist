@@ -1428,6 +1428,15 @@ MaxRecruitAFriendBonusDistance = 100
 MailDeliveryDelay = 3600
 
 #
+#    MailboxAntiCheat
+#        Description: Checks if the player is next to a Mailbox when they attempt to open it.
+#					  Disable mailbox anti-cheat to allow players to use .mailbox
+#        Default:     1 - (Enabled)
+#					  0 - (Disabled)
+
+MailboxAntiCheat = 1
+
+#
 #    SkillChance.Prospecting
 #        Description: Allow skill increase from prospecting.
 #        Default:     0 - (Disabled)
