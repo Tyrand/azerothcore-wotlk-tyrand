@@ -93,3 +93,12 @@ local.properties
 #  !modules/yourmodule
 #
 # ==================
+data/sql/base/db_world/quest_template_locale.sql
+data/sql/base/db_world/quest_request_items_locale.sql
+data/sql/base/db_world/quest_offer_reward_locale.sql
+data/sql/base/db_world/points_of_interest_locale.sql
+data/sql/base/db_world/page_text_locale.sql
+data/sql/base/db_world/item_template_locale.sql
+data/sql/base/db_world/item_set_names_locale.sql
+data/sql/base/db_world/gameobject_template_locale.sql
+data/sql/base/db_world/creature_template_locale.sql
