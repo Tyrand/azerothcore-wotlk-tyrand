@@ -500,6 +500,7 @@ void World::LoadConfigSettings(bool reload)
     rate_values[RATE_DROP_ITEM_REFERENCED]        = sConfigMgr->GetFloatDefault("Rate.Drop.Item.Referenced", 1.0f);
     rate_values[RATE_DROP_ITEM_REFERENCED_AMOUNT] = sConfigMgr->GetFloatDefault("Rate.Drop.Item.ReferencedAmount", 1.0f);
     rate_values[RATE_DROP_MONEY]                  = sConfigMgr->GetFloatDefault("Rate.Drop.Money", 1.0f);
+    rate_values[RATE_REWARD_BONUS_MONEY]          = sConfigMgr->GetFloatDefault("Rate.RewardBonusMoney", 1.0f);
     rate_values[RATE_XP_KILL]                     = sConfigMgr->GetFloatDefault("Rate.XP.Kill", 1.0f);
     rate_values[RATE_XP_BG_KILL]                  = sConfigMgr->GetFloatDefault("Rate.XP.BattlegroundKill", 1.0f);
     rate_values[RATE_XP_QUEST]                    = sConfigMgr->GetFloatDefault("Rate.XP.Quest", 1.0f);
@@ -1280,9 +1281,7 @@ void World::LoadConfigSettings(bool reload)
     sLog->outString("WORLD: VMap support included. LineOfSight:%i, getHeight:%i, indoorCheck:%i PetLOS:%i", enableLOS, enableHeight, enableIndoor, enablePetLOS);
 
     m_bool_configs[CONFIG_PET_LOS]          = sConfigMgr->GetBoolDefault("vmap.petLOS", true);
-    m_bool_configs[CONFIG_START_ALL_SPELLS] = sConfigMgr->GetBoolDefault("PlayerStart.AllSpells", false);
-    if (m_bool_configs[CONFIG_START_ALL_SPELLS])
-        sLog->outString("WORLD: WARNING: PlayerStart.AllSpells enabled - may not function as intended!");
+    m_bool_configs[CONFIG_START_ALL_SPELLS]   = sConfigMgr->GetBoolDefault("PlayerStart.CustomSpells", false);
     m_int_configs[CONFIG_HONOR_AFTER_DUEL]    = sConfigMgr->GetIntDefault("HonorPointsAfterDuel", 0);
     m_bool_configs[CONFIG_START_ALL_EXPLORED] = sConfigMgr->GetBoolDefault("PlayerStart.MapsExplored", false);
     m_bool_configs[CONFIG_START_ALL_REP]      = sConfigMgr->GetBoolDefault("PlayerStart.AllReputation", false);
@@ -1295,6 +1294,7 @@ void World::LoadConfigSettings(bool reload)
         m_int_configs[CONFIG_PVP_TOKEN_COUNT] = 1;
 
     m_bool_configs[CONFIG_NO_RESET_TALENT_COST]       = sConfigMgr->GetBoolDefault("NoResetTalentsCost", false);
+    m_int_configs[CONFIG_TOGGLE_XP_COST]              = sConfigMgr->GetIntDefault("ToggleXP.Cost", 100000);
     m_bool_configs[CONFIG_SHOW_KICK_IN_WORLD]         = sConfigMgr->GetBoolDefault("ShowKickInWorld", false);
     m_bool_configs[CONFIG_SHOW_MUTE_IN_WORLD]         = sConfigMgr->GetBoolDefault("ShowMuteInWorld", false);
     m_bool_configs[CONFIG_SHOW_BAN_IN_WORLD]          = sConfigMgr->GetBoolDefault("ShowBanInWorld", false);
@@ -1404,6 +1404,10 @@ void World::LoadConfigSettings(bool reload)
     m_int_configs[CONFIG_BG_REWARD_LOSER_HONOR_LAST]   = sConfigMgr->GetIntDefault("Battleground.RewardLoserHonorLast", 5);
 
     m_int_configs[CONFIG_WAYPOINT_MOVEMENT_STOP_TIME_FOR_PLAYER] = sConfigMgr->GetIntDefault("WaypointMovementStopTimeForPlayer", 120);
+
+    m_int_configs[CONFIG_NPC_EVADE_IF_NOT_REACHABLE] = sConfigMgr->GetIntDefault("NpcEvadeIfTargetIsUnreachable", 5);
+    m_int_configs[CONFIG_NPC_REGEN_TIME_IF_NOT_REACHABLE_IN_RAID] = sConfigMgr->GetIntDefault("NpcRegenHPTimeIfTargetIsUnreachable", 10);
+    m_bool_configs[CONFIG_REGEN_HP_CANNOT_REACH_TARGET_IN_RAID] = sConfigMgr->GetBoolDefault("NpcRegenHPIfTargetIsUnreachable", true);
 
     //Debug
     m_bool_configs[CONFIG_DEBUG_BATTLEGROUND] = sConfigMgr->GetBoolDefault("Debug.Battleground", false);
@@ -1885,13 +1889,15 @@ void World::SetInitialWorldSettings()
     AddonMgr::LoadFromDB();
 
     // pussywizard:
-    sLog->outString("Deleting invalid mail items...\n");
+    sLog->outString("Deleting invalid mail items...");
+    sLog->outString();
     CharacterDatabase.Query("DELETE mi FROM mail_items mi LEFT JOIN item_instance ii ON mi.item_guid = ii.guid WHERE ii.guid IS NULL");
     CharacterDatabase.Query("DELETE mi FROM mail_items mi LEFT JOIN mail m ON mi.mail_id = m.id WHERE m.id IS NULL");
     CharacterDatabase.Query("UPDATE mail m LEFT JOIN mail_items mi ON m.id = mi.mail_id SET m.has_items=0 WHERE m.has_items<>0 AND mi.mail_id IS NULL");
 
     ///- Handle outdated emails (delete/return)
     sLog->outString("Returning old mails...");
+    sLog->outString();
     sObjectMgr->ReturnOrDeleteOldMails(false);
 
     ///- Load AutoBroadCast
@@ -1925,10 +1931,12 @@ void World::SetInitialWorldSettings()
     sCalendarMgr->LoadFromDB();
 
     sLog->outString("Initializing SpellInfo precomputed data..."); // must be called after loading items, professions, spells and pretty much anything
+    sLog->outString();
     sObjectMgr->InitializeSpellInfoPrecomputedData();
 
     ///- Initialize game time and timers
     sLog->outString("Initialize game time and timers");
+    sLog->outString();
     m_gameTime = time(nullptr);
     m_startTime = m_gameTime;
 
@@ -1959,9 +1967,11 @@ void World::SetInitialWorldSettings()
 
     ///- Initialize MapManager
     sLog->outString("Starting Map System");
+    sLog->outString();
     sMapMgr->Initialize();
 
     sLog->outString("Starting Game Event system...");
+    sLog->outString();
     uint32 nextGameEvent = sGameEventMgr->StartSystem();
     m_timers[WUPDATE_EVENTS].SetInterval(nextGameEvent);    //depend on next event
 
@@ -1972,6 +1982,7 @@ void World::SetInitialWorldSettings()
     Channel::CleanOldChannelsInDB();
 
     sLog->outString("Starting Arena Season...");
+    sLog->outString();
     sGameEventMgr->StartArenaSeason();
 
     sTicketMgr->Initialize();
@@ -2018,6 +2029,7 @@ void World::SetInitialWorldSettings()
     InitCalendarOldEventsDeletionTime();
 
     sLog->outString("Calculate Guild cap reset time...");
+    sLog->outString();
     InitGuildResetTime();
 
     sLog->outString("Load Petitions...");
@@ -2160,6 +2172,7 @@ void World::LoadAutobroadcasts()
     } while (result->NextRow());
 
     sLog->outString(">> Loaded %u autobroadcast definitions in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
+    sLog->outString();
 }
 
 /// Update the World !
