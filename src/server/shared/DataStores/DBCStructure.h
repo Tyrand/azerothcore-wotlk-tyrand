@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016+     AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license: https://github.com/azerothcore/azerothcore-wotlk/blob/master/LICENSE-GPL2
+ * Copyright (C) 2016+     AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license, you may redistribute it and/or modify it under version 2 of the License, or (at your option), any later version.
  * Copyright (C) 2008-2016 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  */
@@ -7,11 +7,12 @@
 #ifndef ACORE_DBCSTRUCTURE_H
 #define ACORE_DBCSTRUCTURE_H
 
-#include "Common.h"
-#include "DBCEnums.h"
 #include "Define.h"
-#include "Util.h"
+#include "DBCEnums.h"
 #include "SharedDefines.h"
+#include "Util.h"
+#include <set>
+#include <map>
 
 // Structures using to access raw DBC data and required packing to portability
 
@@ -521,6 +522,11 @@ struct AreaTableEntry
         if (mapid == 609)
             return true;
         return (flags & AREA_FLAG_SANCTUARY);
+    }
+
+    [[nodiscard]] bool IsFlyable() const
+    {
+        return flags & AREA_FLAG_OUTLAND && !(flags & AREA_FLAG_NO_FLY_ZONE);
     }
 };
 
@@ -1461,22 +1467,19 @@ struct ScalingStatValuesEntry
 //    uint32    displayOrder;                               // 19     m_sortIndex
 //};
 
-//struct SkillRaceClassInfoEntry{
-//    uint32    id;                                         // 0      m_ID
-//    uint32    skillId;                                    // 1      m_skillID
-//    uint32    raceMask;                                   // 2      m_raceMask
-//    uint32    classMask;                                  // 3      m_classMask
-//    uint32    flags;                                      // 4      m_flags
-//    uint32    reqLevel;                                   // 5      m_minLevel
-//    uint32    skillTierId;                                // 6      m_skillTierID
-//    uint32    skillCostID;                                // 7      m_skillCostIndex
-//};
+struct SkillRaceClassInfoEntry
+{
+    //uint32 ID;                                            // 0
+    uint32 SkillID;                                         // 1
+    uint32 RaceMask;                                        // 2
+    uint32 ClassMask;                                       // 3
+    uint32 Flags;                                           // 4
+    //uint32 MinLevel;                                      // 5
+    uint32 SkillTierID;                                     // 6
+    //uint32 SkillCostIndex;                                // 7
+};
 
-//struct SkillTiersEntry{
-//    uint32    id;                                         // 0      m_ID
-//    uint32    skillValue[16];                             // 1-17   m_cost
-//    uint32    maxSkillValue[16];                          // 18-32  m_valueMax
-//};
+#define MAX_SKILL_STEP 16
 
 struct SkillLineEntry
 {
@@ -1495,19 +1498,26 @@ struct SkillLineEntry
 
 struct SkillLineAbilityEntry
 {
-    uint32    id;                                           // 0        m_ID
-    uint32    skillId;                                      // 1        m_skillLine
-    uint32    spellId;                                      // 2        m_spell
-    uint32    racemask;                                     // 3        m_raceMask
-    uint32    classmask;                                    // 4        m_classMask
-    //uint32    racemaskNot;                                // 5        m_excludeRace
-    //uint32    classmaskNot;                               // 6        m_excludeClass
-    uint32    req_skill_value;                              // 7        m_minSkillLineRank
-    uint32    forward_spellid;                              // 8        m_supercededBySpell
-    uint32    learnOnGetSkill;                              // 9        m_acquireMethod
-    uint32    max_value;                                    // 10       m_trivialSkillLineRankHigh
-    uint32    min_value;                                    // 11       m_trivialSkillLineRankLow
-    //uint32    characterPoints[2];                         // 12-13    m_characterPoints[2]
+    uint32 ID;                                              // 0
+    uint32 SkillLine;                                       // 1
+    uint32 Spell;                                           // 2
+    uint32 RaceMask;                                        // 3
+    uint32 ClassMask;                                       // 4
+    //uint32 ExcludeRace;                                   // 5
+    //uint32 ExcludeClass;                                  // 6
+    uint32 MinSkillLineRank;                                // 7
+    uint32 SupercededBySpell;                               // 8
+    uint32 AcquireMethod;                                   // 9
+    uint32 TrivialSkillLineRankHigh;                        // 10
+    uint32 TrivialSkillLineRankLow;                         // 11
+    //uint32 CharacterPoints[2];                            // 12-13
+};
+
+struct SkillTiersEntry
+{
+    uint32 ID;                                              // 0
+    //uint32 Cost[MAX_SKILL_STEP];                          // 1-16
+    uint32 Value[MAX_SKILL_STEP];                           // 17-32
 };
 
 struct SoundEntriesEntry

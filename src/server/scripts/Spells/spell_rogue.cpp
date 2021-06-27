@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016+     AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license: https://github.com/azerothcore/azerothcore-wotlk/blob/master/LICENSE-GPL2
+ * Copyright (C) 2016+     AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license, you may redistribute it and/or modify it under version 2 of the License, or (at your option), any later version.
  * Copyright (C) 2008-2016 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  */
@@ -10,12 +10,12 @@
  * Scriptnames of files in this file should be prefixed with "spell_rog_".
  */
 
-#include "ScriptMgr.h"
-#include "SpellScript.h"
-#include "SpellAuraEffects.h"
+#include "CellImpl.h"
 #include "GridNotifiers.h"
 #include "GridNotifiersImpl.h"
-#include "CellImpl.h"
+#include "ScriptMgr.h"
+#include "SpellAuraEffects.h"
+#include "SpellScript.h"
 
 enum RogueSpells
 {
@@ -116,7 +116,7 @@ public:
 
         bool Load() override
         {
-            _procTargetGUID = 0;
+            _procTargetGUID.Clear();
             return true;
         }
 
@@ -143,7 +143,7 @@ public:
                 CustomSpellValues values;
                 values.AddSpellMod(SPELLVALUE_BASE_POINT0, damage);
                 values.AddSpellMod(SPELLVALUE_FORCED_CRIT_RESULT, int32(eventInfo.GetHitMask() & PROC_EX_CRITICAL_HIT));
-                GetTarget()->CastCustomSpell(SPELL_ROGUE_BLADE_FLURRY_EXTRA_ATTACK, values, procTarget, TRIGGERED_FULL_MASK, NULL, aurEff);
+                GetTarget()->CastCustomSpell(SPELL_ROGUE_BLADE_FLURRY_EXTRA_ATTACK, values, procTarget, TRIGGERED_FULL_MASK, nullptr, aurEff);
             }
         }
 
@@ -154,7 +154,7 @@ public:
         }
 
     private:
-        uint64 _procTargetGUID;
+        ObjectGuid _procTargetGUID;
     };
 
     AuraScript* GetAuraScript() const override
@@ -282,7 +282,8 @@ public:
                         SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(enchant->spellid[s]);
                         if (!spellInfo)
                         {
-                            sLog->outError("Player::CastItemCombatSpell Enchant %i, player (Name: %s, GUID: %u) cast unknown spell %i", enchant->ID, player->GetName().c_str(), player->GetGUIDLow(), enchant->spellid[s]);
+                            LOG_ERROR("misc", "Player::CastItemCombatSpell Enchant %i, player (Name: %s, %s) cast unknown spell %i",
+                                enchant->ID, player->GetName().c_str(), player->GetGUID().ToString().c_str(), enchant->spellid[s]);
                             continue;
                         }
 
@@ -394,7 +395,7 @@ public:
         {
             while (!_targets.empty())
             {
-                uint64 guid = acore::Containers::SelectRandomContainerElement(_targets);
+                ObjectGuid guid = Acore::Containers::SelectRandomContainerElement(_targets);
                 if (Unit* target = ObjectAccessor::GetUnit(*GetTarget(), guid))
                 {
                     // xinef: target may be no longer valid
@@ -437,7 +438,7 @@ public:
         }
 
     private:
-        std::list<uint64> _targets;
+        GuidList _targets;
     };
 
     AuraScript* GetAuraScript() const override
@@ -519,7 +520,7 @@ public:
             PlayerSpellMap const& spellMap = caster->GetSpellMap();
             for (PlayerSpellMap::const_iterator itr = spellMap.begin(); itr != spellMap.end(); ++itr)
             {
-                SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(itr->first);
+                SpellInfo const* spellInfo = sSpellMgr->AssertSpellInfo(itr->first);
                 if (spellInfo->SpellFamilyName == SPELLFAMILY_ROGUE)
                 {
                     if (spellInfo->SpellFamilyFlags[1] & SPELLFAMILYFLAG1_ROGUE_COLDB_SHADOWSTEP ||      // Cold Blood, Shadowstep

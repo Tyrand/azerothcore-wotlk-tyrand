@@ -7,7 +7,7 @@ MTHREADS=$(($(grep -c ^processor /proc/cpuinfo) + 2))
 CWARNINGS=ON
 CDEBUG=OFF
 CTYPE=Release
-CSCRIPTS=ON
+CSCRIPTS=static
 CBUILD_TESTING=ON
 CSERVERS=ON
 CTOOLS=ON
@@ -47,22 +47,22 @@ case $COMPILER in
     echo "CCOMPILERCXX=\"clang++\"" >> ./conf/config.sh
     ;;
 
-  "clang6" )
-    time sudo apt-get install -y clang-6.0
-    echo "CCOMPILERC=\"clang-6.0\"" >> ./conf/config.sh
-    echo "CCOMPILERCXX=\"clang++-6.0\"" >> ./conf/config.sh
-    ;;
-
-  "clang9" )
-    time sudo apt-get install -y clang-9
-    echo "CCOMPILERC=\"clang-9\"" >> ./conf/config.sh
-    echo "CCOMPILERCXX=\"clang++-9\"" >> ./conf/config.sh
-    ;;
-
   "clang10" )
     time sudo apt-get install -y clang-10
     echo "CCOMPILERC=\"clang-10\"" >> ./conf/config.sh
     echo "CCOMPILERCXX=\"clang++-10\"" >> ./conf/config.sh
+    ;;
+
+  "clang11" )
+    time sudo apt-get install -y clang-11
+    echo "CCOMPILERC=\"clang-11\"" >> ./conf/config.sh
+    echo "CCOMPILERCXX=\"clang++-11\"" >> ./conf/config.sh
+    ;;
+
+  "clang12" )
+    time sudo apt-get install -y clang-12
+    echo "CCOMPILERC=\"clang-12\"" >> ./conf/config.sh
+    echo "CCOMPILERCXX=\"clang++-12\"" >> ./conf/config.sh
     ;;
 
   * )
@@ -70,3 +70,9 @@ case $COMPILER in
     exit 1
     ;;
 esac
+
+if [[ $EXTRA_LOGS ]]; then
+  echo "CEXTRA_LOGS=1" >> ./conf/config.sh
+else
+  echo "CEXTRA_LOGS=0" >> ./conf/config.sh
+fi

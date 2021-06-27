@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016+     AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license: https://github.com/azerothcore/azerothcore-wotlk/blob/master/LICENSE-GPL2
+ * Copyright (C) 2016+     AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license, you may redistribute it and/or modify it under version 2 of the License, or (at your option), any later version.
  * Copyright (C) 2008-2016 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  */
@@ -12,23 +12,25 @@
 #define __WORLD_H
 
 #include "IWorld.h"
-#include "Common.h"
-#include "Timer.h"
-#include "SharedDefines.h"
+#include "LockedQueue.h"
+#include "ObjectGuid.h"
 #include "QueryResult.h"
-#include "Callback.h"
-
+#include "SharedDefines.h"
+#include "Timer.h"
+#include <atomic>
+#include <list>
 #include <map>
 #include <set>
-#include <list>
-#include <atomic>
+#include <unordered_map>
 
 class Object;
 class WorldPacket;
 class WorldSocket;
 class SystemMgr;
 
-extern uint32 realmID;
+struct Realm;
+
+AC_GAME_API extern Realm realm;
 
 enum ShutdownMask
 {
@@ -71,18 +73,6 @@ enum BillingPlanFlags
     SESSION_TIME_MIXTURE    = 0x20,
     SESSION_RESTRICTED      = 0x40,
     SESSION_ENABLE_CAIS     = 0x80,
-};
-
-/// Type of server, this is values from second column of Cfg_Configs.dbc
-enum RealmType
-{
-    REALM_TYPE_NORMAL = 0,
-    REALM_TYPE_PVP = 1,
-    REALM_TYPE_NORMAL2 = 4,
-    REALM_TYPE_RP = 6,
-    REALM_TYPE_RPPVP = 8,
-    REALM_TYPE_FFA_PVP = 16                                 // custom, free for all pvp mode like arena PvP in all zones except rest activated places and sanctuaries
-                         // replaced by REALM_PVP in realm list
 };
 
 enum RealmZone
@@ -150,8 +140,8 @@ enum GlobalPlayerUpdateMask
     PLAYER_UPDATE_DATA_NAME             = 0x10,
 };
 
-typedef std::map<uint32, GlobalPlayerData> GlobalPlayerDataMap;
-typedef std::map<std::string, uint32> GlobalPlayerNameMap;
+typedef std::map<ObjectGuid::LowType, GlobalPlayerData> GlobalPlayerDataMap;
+typedef std::map<std::string, ObjectGuid::LowType> GlobalPlayerNameMap;
 
 // xinef: petitions storage
 struct PetitionData
@@ -171,7 +161,7 @@ public:
 
     WorldSession* FindSession(uint32 id) const;
     WorldSession* FindOfflineSession(uint32 id) const;
-    WorldSession* FindOfflineSessionForCharacterGUID(uint32 guidLow) const;
+    WorldSession* FindOfflineSessionForCharacterGUID(ObjectGuid::LowType guidLow) const;
     void AddSession(WorldSession* s);
     void SendAutoBroadcast();
     bool KickSession(uint32 id);
@@ -334,8 +324,8 @@ public:
     void LoadWorldStates();
 
     /// Are we on a "Player versus Player" server?
-    bool IsPvPRealm() const { return (getIntConfig(CONFIG_GAME_TYPE) == REALM_TYPE_PVP || getIntConfig(CONFIG_GAME_TYPE) == REALM_TYPE_RPPVP || getIntConfig(CONFIG_GAME_TYPE) == REALM_TYPE_FFA_PVP); }
-    bool IsFFAPvPRealm() const { return getIntConfig(CONFIG_GAME_TYPE) == REALM_TYPE_FFA_PVP; }
+    [[nodiscard]] bool IsPvPRealm() const;
+    [[nodiscard]] bool IsFFAPvPRealm() const;
 
     void KickAll();
     void KickAllLess(AccountTypes sec);
@@ -346,27 +336,20 @@ public:
     static float GetMaxVisibleDistanceInBGArenas()      { return m_MaxVisibleDistanceInBGArenas;   }
 
     // our: needed for arena spectator subscriptions
-    uint32 GetNextWhoListUpdateDelaySecs()
-    {
-        if (m_timers[WUPDATE_5_SECS].Passed())
-            return 1;
-        uint32 t = m_timers[WUPDATE_5_SECS].GetInterval() - m_timers[WUPDATE_5_SECS].GetCurrent();
-        t = std::min(t, (uint32)m_timers[WUPDATE_5_SECS].GetInterval());
-        return uint32(ceil(t / 1000.0f));
-    }
+    uint32 GetNextWhoListUpdateDelaySecs();
 
     // xinef: Global Player Data Storage system
     void LoadGlobalPlayerDataStore();
-    uint32 GetGlobalPlayerGUID(std::string const& name) const;
-    GlobalPlayerData const* GetGlobalPlayerData(uint32 guid) const;
-    void AddGlobalPlayerData(uint32 guid, uint32 accountId, std::string const& name, uint8 gender, uint8 race, uint8 playerClass, uint8 level, uint16 mailCount, uint32 guildId);
-    void UpdateGlobalPlayerData(uint32 guid, uint8 mask, std::string const& name, uint8 level = 0, uint8 gender = 0, uint8 race = 0, uint8 playerClass = 0);
-    void UpdateGlobalPlayerMails(uint32 guid, int16 count, bool add = true);
-    void UpdateGlobalPlayerGuild(uint32 guid, uint32 guildId);
-    void UpdateGlobalPlayerGroup(uint32 guid, uint32 groupId);
-    void UpdateGlobalPlayerArenaTeam(uint32 guid, uint8 slot, uint32 arenaTeamId);
-    void UpdateGlobalNameData(uint32 guidLow, std::string const& oldName, std::string const& newName);
-    void DeleteGlobalPlayerData(uint32 guid, std::string const& name);
+    ObjectGuid GetGlobalPlayerGUID(std::string const& name) const;
+    GlobalPlayerData const* GetGlobalPlayerData(ObjectGuid::LowType guid) const;
+    void AddGlobalPlayerData(ObjectGuid::LowType guid, uint32 accountId, std::string const& name, uint8 gender, uint8 race, uint8 playerClass, uint8 level, uint16 mailCount, uint32 guildId);
+    void UpdateGlobalPlayerData(ObjectGuid::LowType guid, uint8 mask, std::string const& name, uint8 level = 0, uint8 gender = 0, uint8 race = 0, uint8 playerClass = 0);
+    void UpdateGlobalPlayerMails(ObjectGuid::LowType guid, int16 count, bool add = true);
+    void UpdateGlobalPlayerGuild(ObjectGuid::LowType guid, uint32 guildId);
+    void UpdateGlobalPlayerGroup(ObjectGuid::LowType guid, uint32 groupId);
+    void UpdateGlobalPlayerArenaTeam(ObjectGuid::LowType guid, uint8 slot, uint32 arenaTeamId);
+    void UpdateGlobalNameData(ObjectGuid::LowType guidLow, std::string const& oldName, std::string const& newName);
+    void DeleteGlobalPlayerData(ObjectGuid::LowType guid, std::string const& name);
 
     void ProcessCliCommands();
     void QueueCliCommand(CliCommandHolder* commandHolder) { cliCmdQueue.add(commandHolder); }
@@ -379,7 +362,11 @@ public:
 
     // used World DB version
     void LoadDBVersion();
+    void LoadDBRevision();
     char const* GetDBVersion() const { return m_DBVersion.c_str(); }
+    char const* GetWorldDBRevision() const { return m_WorldDBRevision.c_str(); }
+    char const* GetCharacterDBRevision() const { return m_CharacterDBRevision.c_str(); }
+    char const* GetAuthDBRevision() const { return m_AuthDBRevision.c_str(); }
 
     void LoadAutobroadcasts();
 
@@ -394,6 +381,8 @@ public:
 
     std::string const& GetRealmName() const { return _realmName; } // pussywizard
     void SetRealmName(std::string name) { _realmName = name; } // pussywizard
+
+    void RemoveOldCorpses();
 
 protected:
     void _UpdateGameTime();
@@ -441,7 +430,7 @@ private:
     std::string m_newCharString;
 
     float rate_values[MAX_RATES];
-    uint64 m_int_configs[INT_CONFIG_VALUE_COUNT];
+    uint32 m_int_configs[INT_CONFIG_VALUE_COUNT];
     bool m_bool_configs[BOOL_CONFIG_VALUE_COUNT];
     float m_float_configs[FLOAT_CONFIG_VALUE_COUNT];
     typedef std::map<uint32, uint64> WorldStatesMap;
@@ -466,7 +455,7 @@ private:
     std::string _realmName;
 
     // CLI command holder to be thread safe
-    ACE_Based::LockedQueue<CliCommandHolder*, ACE_Thread_Mutex> cliCmdQueue;
+    LockedQueue<CliCommandHolder*> cliCmdQueue;
 
     // next daily quests and random bg reset time
     time_t m_NextDailyQuestReset;
@@ -481,10 +470,13 @@ private:
 
     // sessions that are added async
     void AddSession_(WorldSession* s);
-    ACE_Based::LockedQueue<WorldSession*, ACE_Thread_Mutex> addSessQueue;
+    LockedQueue<WorldSession*> addSessQueue;
 
     // used versions
     std::string m_DBVersion;
+    std::string m_WorldDBRevision;
+    std::string m_CharacterDBRevision;
+    std::string m_AuthDBRevision;
 
     typedef std::map<uint8, std::string> AutobroadcastsMap;
     AutobroadcastsMap m_Autobroadcasts;
@@ -493,7 +485,7 @@ private:
     AutobroadcastsWeightMap m_AutobroadcastsWeights;
 
     void ProcessQueryCallbacks();
-    ACE_Future_Set<PreparedQueryResult> m_realmCharCallbacks;
+    QueryCallbackProcessor _queryProcessor;
 };
 
 std::unique_ptr<IWorld>& getWorldInstance();

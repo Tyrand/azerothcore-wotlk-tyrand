@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016+     AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license: https://github.com/azerothcore/azerothcore-wotlk/blob/master/LICENSE-GPL2
+ * Copyright (C) 2016+     AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license, you may redistribute it and/or modify it under version 2 of the License, or (at your option), any later version.
  * Copyright (C) 2008-2016 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  */
@@ -11,14 +11,13 @@
  * Scriptnames of files in this file should be prefixed with "spell_gen_"
  */
 
-#include <array>
-#include "ScriptMgr.h"
 #include "Battlefield.h"
 #include "BattlefieldMgr.h"
 #include "Battleground.h"
 #include "BattlegroundMgr.h"
 #include "Cell.h"
 #include "CellImpl.h"
+#include "Chat.h"
 #include "GridNotifiers.h"
 #include "GridNotifiersImpl.h"
 #include "Group.h"
@@ -26,11 +25,12 @@
 #include "LFGMgr.h"
 #include "Pet.h"
 #include "ReputationMgr.h"
+#include "ScriptMgr.h"
 #include "SkillDiscovery.h"
-#include "SpellScript.h"
 #include "SpellAuraEffects.h"
-#include "Chat.h"
+#include "SpellScript.h"
 #include "Vehicle.h"
+#include <array>
 
 // Ours
 class spell_gen_model_visible : public SpellScriptLoader
@@ -194,7 +194,7 @@ public:
                 }
 
                 if (entry)
-                    target->ToPlayer()->KilledMonsterCredit(entry, 0);
+                    target->ToPlayer()->KilledMonsterCredit(entry);
             }
         }
 
@@ -768,7 +768,7 @@ public:
         void FilterTargets(std::list<WorldObject*>& targets)
         {
             targets.remove(GetCaster());
-            acore::Containers::RandomResizeList(targets, _count);
+            Acore::Containers::RandomResize(targets, _count);
         }
 
         void Register() override
@@ -1607,7 +1607,7 @@ public:
                 default:
                     return;
             }
-            GetTarget()->CastSpell(GetTarget(), spellId, true, NULL, aurEff);
+            GetTarget()->CastSpell(GetTarget(), spellId, true, nullptr, aurEff);
         }
 
         void Register() override
@@ -1719,11 +1719,17 @@ public:
             float max_range = GetSpellInfo()->GetMaxRange(false);
             WorldObject* result = nullptr;
             // search for nearby enemy corpse in range
-            acore::AnyDeadUnitSpellTargetInRangeCheck check(caster, max_range, GetSpellInfo(), TARGET_CHECK_CORPSE);
-            acore::WorldObjectSearcher<acore::AnyDeadUnitSpellTargetInRangeCheck> searcher(caster, result, check);
-            caster->GetMap()->VisitFirstFound(caster->m_positionX, caster->m_positionY, max_range, searcher);
+            Acore::AnyDeadUnitSpellTargetInRangeCheck check(caster, max_range, GetSpellInfo(), TARGET_CHECK_CORPSE);
+            Acore::WorldObjectSearcher<Acore::AnyDeadUnitSpellTargetInRangeCheck> searcher(caster, result, check);
+            Cell::VisitWorldObjects(caster, searcher, max_range);
             if (!result)
+            {
+                Cell::VisitGridObjects(caster, searcher, max_range);
+            }
+            if (!result)
+            {
                 return SPELL_FAILED_NO_EDIBLE_CORPSES;
+            }
             return SPELL_CAST_OK;
         }
 
@@ -1742,6 +1748,40 @@ public:
     SpellScript* GetSpellScript() const override
     {
         return new spell_gen_cannibalize_SpellScript();
+    }
+};
+
+// 34098 - ClearAllDebuffs
+class spell_gen_clear_debuffs : public SpellScriptLoader
+{
+public:
+    spell_gen_clear_debuffs() : SpellScriptLoader("spell_gen_clear_debuffs") { }
+
+    class spell_gen_clear_debuffs_SpellScript : public SpellScript
+    {
+        PrepareSpellScript(spell_gen_clear_debuffs_SpellScript);
+
+        void HandleScript(SpellEffIndex /*effIndex*/)
+        {
+            if (Unit* target = GetHitUnit())
+            {
+                target->RemoveOwnedAuras([](Aura const* aura)
+                {
+                    SpellInfo const* spellInfo = aura->GetSpellInfo();
+                    return !spellInfo->IsPositive() && !spellInfo->IsPassive();
+                });
+            }
+        }
+
+        void Register() override
+        {
+            OnEffectHitTarget += SpellEffectFn(spell_gen_clear_debuffs_SpellScript::HandleScript, EFFECT_0, SPELL_EFFECT_SCRIPT_EFFECT);
+        }
+    };
+
+    SpellScript* GetSpellScript() const override
+    {
+        return new spell_gen_clear_debuffs_SpellScript();
     }
 };
 
@@ -2004,7 +2044,7 @@ public:
                 default:
                     return;
             }
-            GetTarget()->CastSpell(GetTarget(), spellId, true, NULL, aurEff);
+            GetTarget()->CastSpell(GetTarget(), spellId, true, nullptr, aurEff);
         }
 
         void Register() override
@@ -2247,6 +2287,7 @@ enum PvPTrinketTriggeredSpells
 {
     SPELL_WILL_OF_THE_FORSAKEN_COOLDOWN_TRIGGER         = 72752,
     SPELL_WILL_OF_THE_FORSAKEN_COOLDOWN_TRIGGER_WOTF    = 72757,
+    SPELL_PVP_TRINKET                                   = 42292,
 };
 
 class spell_pvp_trinket_wotf_shared_cd : public SpellScriptLoader
@@ -2265,7 +2306,10 @@ public:
 
         bool Validate(SpellInfo const* /*spellEntry*/) override
         {
-            return ValidateSpellInfo({ SPELL_WILL_OF_THE_FORSAKEN_COOLDOWN_TRIGGER, SPELL_WILL_OF_THE_FORSAKEN_COOLDOWN_TRIGGER_WOTF });
+            return ValidateSpellInfo({
+                SPELL_WILL_OF_THE_FORSAKEN_COOLDOWN_TRIGGER,
+                SPELL_WILL_OF_THE_FORSAKEN_COOLDOWN_TRIGGER_WOTF,
+                SPELL_PVP_TRINKET });
         }
 
         void HandleScript()
@@ -2297,7 +2341,7 @@ public:
                     player->GetSession()->SendPacket(&data);
 
                     WorldPacket data2;
-                    player->BuildCooldownPacket(data, SPELL_COOLDOWN_FLAG_INCLUDE_GCD, 42292, GetSpellInfo()->CategoryRecoveryTime); // PvP Trinket spell
+                    player->BuildCooldownPacket(data2, SPELL_COOLDOWN_FLAG_INCLUDE_GCD, SPELL_PVP_TRINKET, GetSpellInfo()->CategoryRecoveryTime); // PvP Trinket spell
                     player->GetSession()->SendPacket(&data2);
                 }
             }
@@ -2339,7 +2383,7 @@ public:
         void OnApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
         {
             // Remove all auras with spell id 46221, except the one currently being applied
-            while (Aura* aur = GetUnitOwner()->GetOwnedAura(SPELL_ANIMAL_BLOOD, 0, 0, 0, GetAura()))
+            while (Aura* aur = GetUnitOwner()->GetOwnedAura(SPELL_ANIMAL_BLOOD, ObjectGuid::Empty, ObjectGuid::Empty, 0, GetAura()))
                 GetUnitOwner()->RemoveOwnedAura(aur);
         }
 
@@ -2676,7 +2720,7 @@ public:
 
         void AchievementCredit(SpellEffIndex /*effIndex*/)
         {
-            // but in effect handling OriginalCaster can become NULL
+            // but in effect handling OriginalCaster can become nullptr
             if (Unit* originalCaster = GetOriginalCaster())
                 if (GameObject* go = GetHitGObj())
                     if (go->GetGOValue()->Building.Health > 0 && go->GetGOInfo()->type == GAMEOBJECT_TYPE_DESTRUCTIBLE_BUILDING)
@@ -2735,7 +2779,7 @@ public:
             if (stackAmount >= 15 && stackAmount < 40)
             {
                 stackAmount = 40;
-                GetTarget()->CastSpell(GetTarget(), SPELL_TURKEY_VENGEANCE, true, NULL, aurEff, GetCasterGUID());
+                GetTarget()->CastSpell(GetTarget(), SPELL_TURKEY_VENGEANCE, true, nullptr, aurEff, GetCasterGUID());
             }
         }
 
@@ -3114,7 +3158,7 @@ public:
             if (Unit* target = GetHitUnit())
             {
                 WorldPacket data(SMSG_SPIRIT_HEALER_CONFIRM, 8);
-                data << uint64(target->GetGUID());
+                data << target->GetGUID();
                 originalCaster->GetSession()->SendPacket(&data);
             }
         }
@@ -3552,7 +3596,7 @@ public:
 
         void Register() override
         {
-            SpellInfo const* spell = sSpellMgr->GetSpellInfo(m_scriptSpellId);
+            SpellInfo const* spell = sSpellMgr->AssertSpellInfo(m_scriptSpellId);
 
             if (spell->HasEffect(SPELL_EFFECT_SCRIPT_EFFECT))
                 OnEffectHitTarget += SpellEffectFn(spell_gen_mounted_charge_SpellScript::HandleScriptEffect, EFFECT_FIRST_FOUND, SPELL_EFFECT_SCRIPT_EFFECT);
@@ -3603,7 +3647,7 @@ public:
                 for (uint8 i = 0; i < GetSpellInfo()->StackAmount; ++i)
                     target->RemoveAurasDueToSpell(SPELL_VISUAL_SHIELD_1 + i);
 
-                target->CastSpell(target, SPELL_VISUAL_SHIELD_1 + GetAura()->GetStackAmount() - 1, true, NULL, aurEff);
+                target->CastSpell(target, SPELL_VISUAL_SHIELD_1 + GetAura()->GetStackAmount() - 1, true, nullptr, aurEff);
             }
             else
                 GetTarget()->RemoveAurasDueToSpell(GetId());
@@ -3625,7 +3669,7 @@ public:
 
         void Register() override
         {
-            SpellInfo const* spell = sSpellMgr->GetSpellInfo(m_scriptSpellId);
+            SpellInfo const* spell = sSpellMgr->AssertSpellInfo(m_scriptSpellId);
 
             // Defend spells cast by NPCs (add visuals)
             if (spell->Effects[EFFECT_0].ApplyAuraName == SPELL_AURA_MOD_DAMAGE_PERCENT_TAKEN)
@@ -4339,7 +4383,7 @@ public:
                 return;
 
             // final heal
-            GetTarget()->CastSpell(GetTarget(), _spellId, true, NULL, aurEff, GetCasterGUID());
+            GetTarget()->CastSpell(GetTarget(), _spellId, true, nullptr, aurEff, GetCasterGUID());
         }
 
         void Register() override
@@ -4515,7 +4559,7 @@ public:
                 target->SetTemporaryUnsummonedPetNumber(0);
 
                 // Prevent stacking of mounts and client crashes upon dismounting
-                target->RemoveAurasByType(SPELL_AURA_MOUNTED, 0, GetHitAura());
+                target->RemoveAurasByType(SPELL_AURA_MOUNTED, ObjectGuid::Empty, GetHitAura());
 
                 // Triggered spell id dependent on riding skill and zone
                 bool canFly = false;
@@ -4774,13 +4818,13 @@ public:
                 }
             }
 
-            targets.remove_if(acore::PowerCheck(POWER_MANA, false));
+            targets.remove_if(Acore::PowerCheck(POWER_MANA, false));
 
             uint8 const maxTargets = 10;
 
             if (targets.size() > maxTargets)
             {
-                targets.sort(acore::PowerPctOrderPred(POWER_MANA));
+                targets.sort(Acore::PowerPctOrderPred(POWER_MANA));
                 targets.resize(maxTargets);
             }
         }
@@ -4923,7 +4967,7 @@ public:
         void HandleEffectPeriodic(AuraEffect const* /*aurEff*/)
         {
             PreventDefaultAction();
-            GetTarget()->CastSpell((Unit*)NULL, SPELL_YOGG_SARON_WHISPER_DUMMY, true);
+            GetTarget()->CastSpell((Unit*)nullptr, SPELL_YOGG_SARON_WHISPER_DUMMY, true);
         }
 
         void Register() override
@@ -5041,6 +5085,61 @@ public:
     }
 };
 
+class spell_gen_shadowmeld : public SpellScriptLoader
+{
+public:
+    spell_gen_shadowmeld() : SpellScriptLoader("spell_gen_shadowmeld") {}
+
+    class spell_gen_shadowmeld_SpellScript : public SpellScript
+    {
+        PrepareSpellScript(spell_gen_shadowmeld_SpellScript);
+
+        void HandleDummy(SpellEffIndex /*effIndex*/)
+        {
+            Unit* caster = GetCaster();
+            if (!caster)
+                return;
+
+            caster->InterruptSpell(CURRENT_AUTOREPEAT_SPELL); // break Auto Shot and autohit
+            caster->InterruptSpell(CURRENT_CHANNELED_SPELL); // break channeled spells
+
+            bool instant_exit = true;
+            if (Player* pCaster = caster->ToPlayer()) // if is a creature instant exits combat, else check if someone in party is in combat in visibility distance
+            {
+                ObjectGuid myGUID = pCaster->GetGUID();
+                float visibilityRange = pCaster->GetMap()->GetVisibilityRange();
+                if (Group* pGroup = pCaster->GetGroup())
+                {
+                    const Group::MemberSlotList membersList = pGroup->GetMemberSlots();
+                    for (Group::member_citerator itr = membersList.begin(); itr != membersList.end() && instant_exit; ++itr)
+                        if (itr->guid != myGUID)
+                            if (Player* GroupMember = ObjectAccessor::GetPlayer(*pCaster, itr->guid))
+                                if (GroupMember->IsInCombat() && pCaster->GetMap() == GroupMember->GetMap() && pCaster->IsWithinDistInMap(GroupMember, visibilityRange))
+                                    instant_exit = false;
+                }
+
+                pCaster->SendAttackSwingCancelAttack();
+            }
+
+            if (instant_exit)
+            {
+                caster->getHostileRefManager().deleteReferences();
+            }
+            caster->CombatStop();
+        }
+
+        void Register() override
+        {
+            OnEffectHitTarget += SpellEffectFn(spell_gen_shadowmeld_SpellScript::HandleDummy, EFFECT_1, SPELL_EFFECT_DUMMY);
+        }
+    };
+
+    SpellScript* GetSpellScript() const override
+    {
+        return new spell_gen_shadowmeld_SpellScript();
+    }
+};
+
 void AddSC_generic_spell_scripts()
 {
     // ours:
@@ -5097,6 +5196,7 @@ void AddSC_generic_spell_scripts()
     new spell_gen_av_drekthar_presence();
     new spell_gen_burn_brutallus();
     new spell_gen_cannibalize();
+    new spell_gen_clear_debuffs();
     new spell_gen_create_lance();
     new spell_gen_netherbloom();
     new spell_gen_nightmare_vine();
@@ -5170,4 +5270,5 @@ void AddSC_generic_spell_scripts()
     new spell_gen_eject_all_passengers();
     new spell_gen_eject_passenger();
     new spell_gen_charmed_unit_spell_cooldown();
+    new spell_gen_shadowmeld();
 }

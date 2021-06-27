@@ -2,12 +2,12 @@
  * Originally written by Xinef - Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU AGPL v3 license: https://github.com/azerothcore/azerothcore-wotlk/blob/master/LICENSE-AGPL3
 */
 
-#include "ScriptMgr.h"
-#include "ScriptedCreature.h"
-#include "vault_of_archavon.h"
-#include "SpellAuras.h"
 #include "PassiveAI.h"
 #include "Player.h"
+#include "ScriptedCreature.h"
+#include "ScriptMgr.h"
+#include "SpellAuras.h"
+#include "vault_of_archavon.h"
 
 enum Spells
 {
@@ -104,6 +104,7 @@ public:
                 pInstance->SetData(EVENT_TORAVON, DONE);
                 pInstance->DoRemoveAurasDueToSpellOnPlayers(SPELL_WHITEOUT);
             }
+            summons.DespawnAll();
         }
 
         void JustSummoned(Creature* cr) override
@@ -148,7 +149,7 @@ public:
 
     CreatureAI* GetAI(Creature* creature) const override
     {
-        return new boss_toravonAI(creature);
+        return GetVaultOfArchavonAI<boss_toravonAI>(creature);
     }
 };
 
@@ -192,7 +193,7 @@ public:
 
     CreatureAI* GetAI(Creature* creature) const override
     {
-        return new npc_frozen_orbAI(creature);
+        return GetVaultOfArchavonAI<npc_frozen_orbAI>(creature);
     }
 };
 
@@ -215,7 +216,7 @@ public:
         void JustSummoned(Creature* cr) override
         {
             if (InstanceScript* pInstance = me->GetInstanceScript())
-                if (Creature* toravon = ObjectAccessor::GetCreature(*me, pInstance->GetData64(EVENT_TORAVON)))
+                if (Creature* toravon = ObjectAccessor::GetCreature(*me, pInstance->GetGuidData(EVENT_TORAVON)))
                     if (toravon->AI())
                         toravon->AI()->JustSummoned(cr);
         }
@@ -223,7 +224,7 @@ public:
 
     CreatureAI* GetAI(Creature* creature) const override
     {
-        return new npc_frozen_orb_stalkerAI(creature);
+        return GetVaultOfArchavonAI<npc_frozen_orb_stalkerAI>(creature);
     }
 };
 

@@ -2,8 +2,8 @@
  * Originally written by Xinef - Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU AGPL v3 license: https://github.com/azerothcore/azerothcore-wotlk/blob/master/LICENSE-AGPL3
 */
 
-#include "ScriptMgr.h"
 #include "ScriptedCreature.h"
+#include "ScriptMgr.h"
 #include "shadow_labyrinth.h"
 #include "SpellInfo.h"
 
@@ -39,7 +39,7 @@ public:
 
     CreatureAI* GetAI(Creature* creature) const override
     {
-        return new boss_murmurAI (creature);
+        return GetShadowLabyrinthAI<boss_murmurAI>(creature);
     }
 
     struct boss_murmurAI : public ScriptedAI
@@ -192,8 +192,8 @@ public:
 
         void SelectTarget(std::list<WorldObject*>& targets)
         {
-            targets.remove_if(acore::AllWorldObjectsInExactRange(GetCaster(), 100.0f, true));
-            targets.remove_if(acore::AllWorldObjectsInExactRange(GetCaster(), 25.0f, false));
+            targets.remove_if(Acore::AllWorldObjectsInExactRange(GetCaster(), 100.0f, true));
+            targets.remove_if(Acore::AllWorldObjectsInExactRange(GetCaster(), 25.0f, false));
         }
 
         void Register() override

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016+     AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license: https://github.com/azerothcore/azerothcore-wotlk/blob/master/LICENSE-GPL2
+ * Copyright (C) 2016+     AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license, you may redistribute it and/or modify it under version 2 of the License, or (at your option), any later version.
  * Copyright (C) 2008-2016 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  */
@@ -10,6 +10,7 @@
 // For static or at-server-startup loaded spell data
 
 #include "Common.h"
+#include "Log.h"
 #include "SharedDefines.h"
 #include "Unit.h"
 
@@ -684,6 +685,30 @@ public:
 
     // SpellInfo object management
     [[nodiscard]] SpellInfo const* GetSpellInfo(uint32 spellId) const { return spellId < GetSpellInfoStoreSize() ?  mSpellInfoMap[spellId] : nullptr; }
+    // Use this only with 100% valid spellIds
+    SpellInfo const* AssertSpellInfo(uint32 spellId) const
+    {
+        ASSERT(spellId < GetSpellInfoStoreSize());
+        SpellInfo const* spellInfo = mSpellInfoMap[spellId];
+        ASSERT(spellInfo);
+        return spellInfo;
+    }
+    // use this instead of AssertSpellInfo to have the problem logged instead of crashing the server
+    SpellInfo const* CheckSpellInfo(uint32 spellId) const
+    {
+        if (spellId >= GetSpellInfoStoreSize())
+        {
+            LOG_ERROR("server", "spellId %u is not lower than GetSpellInfoStoreSize() (%u)", spellId, GetSpellInfoStoreSize());
+            return nullptr;
+        }
+        SpellInfo const* spellInfo = mSpellInfoMap[spellId];
+        if (!spellInfo)
+        {
+            LOG_ERROR("server", "spellId %u has invalid spellInfo", spellId);
+            return nullptr;
+        }
+        return spellInfo;
+    }
     [[nodiscard]] uint32 GetSpellInfoStoreSize() const { return mSpellInfoMap.size(); }
 
     // Talent Additional Set

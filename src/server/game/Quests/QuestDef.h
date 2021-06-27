@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016+     AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license: https://github.com/azerothcore/azerothcore-wotlk/blob/master/LICENSE-GPL2
+ * Copyright (C) 2016+     AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license, you may redistribute it and/or modify it under version 2 of the License, or (at your option), any later version.
  * Copyright (C) 2008-2016 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  */
@@ -7,12 +7,11 @@
 #ifndef AZEROTHCORE_QUEST_H
 #define AZEROTHCORE_QUEST_H
 
-#include "Define.h"
 #include "DatabaseEnv.h"
+#include "DBCEnums.h"
+#include "Define.h"
 #include "SharedDefines.h"
 #include "WorldPacket.h"
-#include "DBCEnums.h"
-
 #include <string>
 #include <vector>
 
@@ -166,14 +165,14 @@ struct QuestLocale
 {
     QuestLocale() { ObjectiveText.resize(QUEST_OBJECTIVES_COUNT); }
 
-    StringVector Title;
-    StringVector Details;
-    StringVector Objectives;
-    StringVector OfferRewardText;
-    StringVector RequestItemsText;
-    StringVector AreaDescription;
-    StringVector CompletedText;
-    std::vector< StringVector > ObjectiveText;
+    std::vector<std::string> Title;
+    std::vector<std::string> Details;
+    std::vector<std::string> Objectives;
+    std::vector<std::string> OfferRewardText;
+    std::vector<std::string> RequestItemsText;
+    std::vector<std::string> AreaDescription;
+    std::vector<std::string> CompletedText;
+    std::vector< std::vector<std::string> > ObjectiveText;
 };
 
 struct QuestRequestItemsLocale

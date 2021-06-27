@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016+     AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license: https://github.com/azerothcore/azerothcore-wotlk/blob/master/LICENSE-GPL2
+ * Copyright (C) 2016+     AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license, you may redistribute it and/or modify it under version 2 of the License, or (at your option), any later version.
  * Copyright (C) 2008-2016 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  */
@@ -7,8 +7,8 @@
 #ifndef _IVMAPMANAGER_H
 #define _IVMAPMANAGER_H
 
-#include <string>
 #include "Define.h"
+#include <string>
 
 //===========================================================
 
@@ -18,7 +18,6 @@ This is the minimum interface to the VMapMamager.
 
 namespace VMAP
 {
-
     enum VMAP_LOAD_RESULT
     {
         VMAP_LOAD_RESULT_ERROR,
@@ -54,7 +53,7 @@ namespace VMAP
         test if we hit an object. return true if we hit one. rx, ry, rz will hold the hit position or the dest position, if no intersection was found
         return a position, that is pReduceDist closer to the origin
         */
-        virtual bool getObjectHitPos(unsigned int pMapId, float x1, float y1, float z1, float x2, float y2, float z2, float& rx, float& ry, float& rz, float pModifyDist) = 0;
+        virtual bool GetObjectHitPos(unsigned int pMapId, float x1, float y1, float z1, float x2, float y2, float z2, float& rx, float& ry, float& rz, float pModifyDist) = 0;
         /**
         send debug commands
         */
@@ -80,9 +79,9 @@ namespace VMAP
         Query world model area info.
         \param z gets adjusted to the ground height for which this are info is valid
         */
-        virtual bool getAreaInfo(unsigned int pMapId, float x, float y, float& z, uint32& flags, int32& adtId, int32& rootId, int32& groupId) const = 0;
+        virtual bool GetAreaInfo(unsigned int pMapId, float x, float y, float& z, uint32& flags, int32& adtId, int32& rootId, int32& groupId) const = 0;
         virtual bool GetLiquidLevel(uint32 pMapId, float x, float y, float z, uint8 ReqLiquidType, float& level, float& floor, uint32& type) const = 0;
     };
-
 }
+
 #endif

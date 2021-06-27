@@ -3,15 +3,24 @@
 */
 
 #include "Creature.h"
-#include "MapManager.h"
-#include "RandomMovementGenerator.h"
-#include "ObjectAccessor.h"
-#include "Map.h"
-#include "Util.h"
 #include "CreatureGroups.h"
-#include "MoveSplineInit.h"
+#include "Map.h"
+#include "MapManager.h"
 #include "MoveSpline.h"
+#include "MoveSplineInit.h"
+#include "ObjectAccessor.h"
+#include "RandomMovementGenerator.h"
 #include "Spell.h"
+#include "Util.h"
+
+template<class T>
+RandomMovementGenerator<T>::~RandomMovementGenerator() { }
+
+template<>
+RandomMovementGenerator<Creature>::~RandomMovementGenerator()
+{
+    delete _pathGenerator;
+}
 
 template<>
 void RandomMovementGenerator<Creature>::_setRandomLocation(Creature* creature)
@@ -54,7 +63,7 @@ void RandomMovementGenerator<Creature>::_setRandomLocation(Creature* creature)
         Map* map = creature->GetMap();
         float x = _destinationPoints[newPoint].x, y = _destinationPoints[newPoint].y, z = _destinationPoints[newPoint].z;
         // invalid coordinates
-        if (!acore::IsValidMapCoord(x, y))
+        if (!Acore::IsValidMapCoord(x, y))
         {
             _validPointsVector[_currentPoint].erase(randomIter);
             _preComputedPaths.erase(pathIdx);
@@ -202,7 +211,7 @@ void RandomMovementGenerator<Creature>::DoInitialize(Creature* creature)
     if (!_wanderDistance)
         _wanderDistance = creature->GetWanderDistance();
 
-    _nextMoveTime.Reset(creature->GetDBTableGUIDLow() && creature->GetWanderDistance() == _wanderDistance ? urand(1, 5000) : 0);
+    _nextMoveTime.Reset(creature->GetSpawnId() && creature->GetWanderDistance() == _wanderDistance ? urand(1, 5000) : 0);
     _wanderDistance = std::max((creature->GetWanderDistance() == _wanderDistance && creature->GetInstanceId() == 0) ? (creature->CanFly() ? MIN_WANDER_DISTANCE_AIR : MIN_WANDER_DISTANCE_GROUND) : 0.0f, _wanderDistance);
 
     if (G3D::fuzzyEq(_initialPosition.GetExactDist2d(0.0f, 0.0f), 0.0f))

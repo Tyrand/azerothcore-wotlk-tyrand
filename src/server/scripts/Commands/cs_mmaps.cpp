@@ -23,19 +23,19 @@
 * mmap sub-commands
 */
 
-#include "ScriptMgr.h"
+#include "CellImpl.h"
 #include "Chat.h"
 #include "DisableMgr.h"
-#include "ObjectMgr.h"
-#include "Player.h"
-#include "PointMovementGenerator.h"
-#include "PathGenerator.h"
-#include "MMapFactory.h"
-#include "Map.h"
-#include "TargetedMovementGenerator.h"
 #include "GridNotifiers.h"
 #include "GridNotifiersImpl.h"
-#include "CellImpl.h"
+#include "Map.h"
+#include "MMapFactory.h"
+#include "ObjectMgr.h"
+#include "PathGenerator.h"
+#include "Player.h"
+#include "PointMovementGenerator.h"
+#include "ScriptMgr.h"
+#include "TargetedMovementGenerator.h"
 
 class mmaps_commandscript : public CommandScript
 {
@@ -55,7 +55,7 @@ public:
 
         static std::vector<ChatCommand> commandTable =
         {
-            { "mmap", SEC_ADMINISTRATOR, true, NULL, "", mmapCommandTable },
+            { "mmap", SEC_ADMINISTRATOR, true, nullptr, "", mmapCommandTable },
         };
         return commandTable;
     }
@@ -263,18 +263,11 @@ public:
         float radius = 40.0f;
         WorldObject* object = handler->GetSession()->GetPlayer();
 
-        CellCoord pair(acore::ComputeCellCoord(object->GetPositionX(), object->GetPositionY()));
-        Cell cell(pair);
-        cell.SetNoCreate();
-
-        std::list<Creature*> creatureList;
-
-        acore::AnyUnitInObjectRangeCheck go_check(object, radius);
-        acore::CreatureListSearcher<acore::AnyUnitInObjectRangeCheck> go_search(object, creatureList, go_check);
-        TypeContainerVisitor<acore::CreatureListSearcher<acore::AnyUnitInObjectRangeCheck>, GridTypeMapContainer> go_visit(go_search);
-
         // Get Creatures
-        cell.Visit(pair, go_visit, *(object->GetMap()), *object, radius);
+        std::list<Creature*> creatureList;
+        Acore::AnyUnitInObjectRangeCheck go_check(object, radius);
+        Acore::CreatureListSearcher<Acore::AnyUnitInObjectRangeCheck> go_search(object, creatureList, go_check);
+        Cell::VisitGridObjects(object, go_search, radius);
 
         if (!creatureList.empty())
         {

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016+     AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license: https://github.com/azerothcore/azerothcore-wotlk/blob/master/LICENSE-GPL2
+ * Copyright (C) 2016+     AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license, you may redistribute it and/or modify it under version 2 of the License, or (at your option), any later version.
  * Copyright (C) 2008-2016 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  */
@@ -10,12 +10,12 @@
  * Scriptnames of files in this file should be prefixed with "spell_dru_".
  */
 
-#include "Player.h"
-#include "ScriptMgr.h"
-#include "SpellScript.h"
-#include "SpellAuraEffects.h"
 #include "Containers.h"
 #include "GridNotifiers.h"
+#include "Player.h"
+#include "ScriptMgr.h"
+#include "SpellAuraEffects.h"
+#include "SpellScript.h"
 
 enum DruidSpells
 {
@@ -74,7 +74,7 @@ public:
             int32 amount = CalculatePct(eventInfo.GetDamageInfo()->GetDamage(), aurEff->GetAmount()) / triggeredSpell->GetMaxTicks();
             eventInfo.GetProcTarget()->CastDelayedSpellWithPeriodicAmount(GetTarget(), triggered_spell_id, SPELL_AURA_PERIODIC_DAMAGE, amount, EFFECT_0);
 
-            //GetTarget()->CastCustomSpell(triggered_spell_id, SPELLVALUE_BASE_POINT0, amount, eventInfo.GetProcTarget(), true, NULL, aurEff);
+            //GetTarget()->CastCustomSpell(triggered_spell_id, SPELLVALUE_BASE_POINT0, amount, eventInfo.GetProcTarget(), true, nullptr, aurEff);
         }
 
         void Register() override
@@ -137,7 +137,7 @@ public:
         {
             if (Player* player = GetTarget()->ToPlayer())
                 if (uint8 rank = player->HasTalent(SPELL_DRUID_FERAL_SWIFTNESS_R1, player->GetActiveSpec()) ? 1 : (player->HasTalent(SPELL_DRUID_FERAL_SWIFTNESS_R2, player->GetActiveSpec()) ? 2 : 0))
-                    player->CastSpell(player, rank == 1 ? SPELL_DRUID_FERAL_SWIFTNESS_PASSIVE_1 : SPELL_DRUID_FERAL_SWIFTNESS_PASSIVE_2, true, NULL, aurEff, GetCasterGUID());
+                    player->CastSpell(player, rank == 1 ? SPELL_DRUID_FERAL_SWIFTNESS_PASSIVE_1 : SPELL_DRUID_FERAL_SWIFTNESS_PASSIVE_2, true, nullptr, aurEff, GetCasterGUID());
         }
 
         void AfterRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
@@ -220,7 +220,7 @@ public:
         void CalculateAmount(AuraEffect const* /*aurEff*/, int32& amount, bool& /*canBeRecalculated*/)
         {
             // xinef: chance of success stores proper amount of damage increase
-            // xinef: little hack because GetSpellModOwner will return NULL pointer at this point (early summoning stage)
+            // xinef: little hack because GetSpellModOwner will return nullptr pointer at this point (early summoning stage)
             if (GetUnitOwner()->IsSummon())
                 if (Unit* owner = GetUnitOwner()->ToTempSummon()->GetSummoner())
                     if (Player* player = owner->GetSpellModOwner())
@@ -604,9 +604,9 @@ public:
                 healAmount = GetTarget()->SpellHealingBonusTaken(caster, finalHeal, healAmount, HEAL, stack);
                 // restore mana
                 int32 returnmana = (GetSpellInfo()->ManaCostPercentage * caster->GetCreateMana() / 100) * stack / 2;
-                caster->CastCustomSpell(caster, SPELL_DRUID_LIFEBLOOM_ENERGIZE, &returnmana, nullptr, nullptr, true, NULL, aurEff, GetCasterGUID());
+                caster->CastCustomSpell(caster, SPELL_DRUID_LIFEBLOOM_ENERGIZE, &returnmana, nullptr, nullptr, true, nullptr, aurEff, GetCasterGUID());
             }
-            GetTarget()->CastCustomSpell(GetTarget(), SPELL_DRUID_LIFEBLOOM_FINAL_HEAL, &healAmount, nullptr, nullptr, true, NULL, aurEff, GetCasterGUID());
+            GetTarget()->CastCustomSpell(GetTarget(), SPELL_DRUID_LIFEBLOOM_FINAL_HEAL, &healAmount, nullptr, nullptr, true, nullptr, aurEff, GetCasterGUID());
         }
 
         void HandleDispel(DispelInfo* dispelInfo)
@@ -665,7 +665,7 @@ public:
         {
             PreventDefaultAction();
             int32 amount = CalculatePct(eventInfo.GetHealInfo()->GetHeal(), aurEff->GetAmount());
-            GetTarget()->CastCustomSpell(SPELL_DRUID_LIVING_SEED_PROC, SPELLVALUE_BASE_POINT0, amount, eventInfo.GetProcTarget(), true, NULL, aurEff);
+            GetTarget()->CastCustomSpell(SPELL_DRUID_LIVING_SEED_PROC, SPELLVALUE_BASE_POINT0, amount, eventInfo.GetProcTarget(), true, nullptr, aurEff);
         }
 
         void Register() override
@@ -698,7 +698,7 @@ public:
         void HandleProc(AuraEffect const* aurEff, ProcEventInfo& /*eventInfo*/)
         {
             PreventDefaultAction();
-            GetTarget()->CastCustomSpell(SPELL_DRUID_LIVING_SEED_HEAL, SPELLVALUE_BASE_POINT0, aurEff->GetAmount(), GetTarget(), true, NULL, aurEff);
+            GetTarget()->CastCustomSpell(SPELL_DRUID_LIVING_SEED_HEAL, SPELLVALUE_BASE_POINT0, aurEff->GetAmount(), GetTarget(), true, nullptr, aurEff);
         }
 
         void Register() override
@@ -985,7 +985,7 @@ public:
         void AfterApply(AuraEffect const* aurEff, AuraEffectHandleModes /*mode*/)
         {
             Unit* target = GetTarget();
-            target->CastSpell(target, SPELL_DRUID_SAVAGE_ROAR, true, NULL, aurEff, GetCasterGUID());
+            target->CastSpell(target, SPELL_DRUID_SAVAGE_ROAR, true, nullptr, aurEff, GetCasterGUID());
         }
 
         void AfterRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
@@ -1050,7 +1050,7 @@ public:
 
         void FilterTargets(std::list<WorldObject*>& targets)
         {
-            acore::Containers::RandomResizeList(targets, 2);
+            Acore::Containers::RandomResize(targets, 2);
         }
 
         void HandleDummy(SpellEffIndex /*effIndex*/)
@@ -1276,7 +1276,7 @@ public:
                     return;
                 }
 
-                tempTargets.sort(acore::HealthPctOrderPred());
+                tempTargets.sort(Acore::HealthPctOrderPred());
                 targets.clear();
                 targets.push_back(tempTargets.front());
             }
@@ -1313,13 +1313,13 @@ public:
 
         void FilterTargets(std::list<WorldObject*>& targets)
         {
-            targets.remove_if(acore::RaidCheck(GetCaster(), false));
+            targets.remove_if(Acore::RaidCheck(GetCaster(), false));
 
             uint32 const maxTargets = GetCaster()->HasAura(SPELL_DRUID_GLYPH_OF_WILD_GROWTH) ? 6 : 5;
 
             if (targets.size() > maxTargets)
             {
-                targets.sort(acore::HealthPctOrderPred());
+                targets.sort(Acore::HealthPctOrderPred());
                 targets.resize(maxTargets);
             }
 
@@ -1347,6 +1347,48 @@ public:
     }
 };
 
+// -50334 - Berserk
+class spell_dru_berserk : public SpellScriptLoader
+{
+public:
+    spell_dru_berserk() : SpellScriptLoader("spell_dru_berserk") { }
+
+    class spell_dru_berserk_SpellScript : public SpellScript
+    {
+        PrepareSpellScript(spell_dru_berserk_SpellScript);
+
+        void HandleAfterCast()
+        {
+            Unit* caster = GetCaster();
+
+            if (caster->GetTypeId() == TYPEID_PLAYER)
+            {
+                // Remove tiger fury / mangle(bear)
+                const uint32 TigerFury[6] = { 5217, 6793, 9845, 9846, 50212, 50213 };
+                const uint32 DireMaul[6] = { 33878, 33986, 33987, 48563, 48564 };
+
+                // remove aura
+                for (auto& i : TigerFury)
+                    caster->RemoveAurasDueToSpell(i);
+
+                // reset dire bear maul cd
+                for (auto& i : DireMaul)
+                    caster->ToPlayer()->RemoveSpellCooldown(i, true);
+            }
+        }
+
+        void Register() override
+        {
+            AfterCast += SpellCastFn(spell_dru_berserk_SpellScript::HandleAfterCast);
+        }
+    };
+
+    SpellScript* GetSpellScript() const
+    {
+        return new spell_dru_berserk_SpellScript();
+    }
+};
+
 void AddSC_druid_spell_scripts()
 {
     // Ours
@@ -1357,6 +1399,7 @@ void AddSC_druid_spell_scripts()
     new spell_dru_brambles_treant();
     new spell_dru_barkskin();
     new spell_dru_treant_scaling();
+    new spell_dru_berserk();
 
     // Theirs
     new spell_dru_dash();

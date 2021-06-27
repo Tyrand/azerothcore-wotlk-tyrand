@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016+     AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license: https://github.com/azerothcore/azerothcore-wotlk/blob/master/LICENSE-GPL2
+ * Copyright (C) 2016+     AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license, you may redistribute it and/or modify it under version 2 of the License, or (at your option), any later version.
  * Copyright (C) 2008-2016 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  */
@@ -7,13 +7,10 @@
 #ifndef THREADING_H
 #define THREADING_H
 
-#include <thread>
 #include <atomic>
-
 #include <thread>
-#include <atomic>
 
-namespace acore
+namespace Acore
 {
     class Runnable
     {
@@ -25,7 +22,9 @@ namespace acore
         void decReference()
         {
             if (!--m_refs)
+            {
                 delete this;
+            }
         }
     private:
         std::atomic_long m_refs;
