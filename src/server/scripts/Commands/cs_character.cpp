@@ -65,6 +65,7 @@ public:
         static std::vector<ChatCommand> commandTable =
         {
             { "character",      SEC_GAMEMASTER,     true,  nullptr,                                "", characterCommandTable },
+            { "bank",      		SEC_GAMEMASTER,     true,  HandleCharacterCheckBankCommand,        ""},
             { "levelup",        SEC_GAMEMASTER,     false, &HandleLevelUpCommand,                  "" },
             { "pdump",          SEC_ADMINISTRATOR,  true,  nullptr,                                "", pdumpCommandTable }
         };
