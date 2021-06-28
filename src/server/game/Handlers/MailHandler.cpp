@@ -25,11 +25,11 @@ bool WorldSession::CanOpenMailBox(ObjectGuid guid)
 {
     if (guid == _player->GetGUID())
     {
-        //if (_player->GetSession()->GetSecurity() < SEC_MODERATOR)
-        //{
-        //    LOG_ERROR("network.opcode", "%s attempt open mailbox in cheating way.", _player->GetName().c_str());
-        //    return false;
-        //}
+        if (_player->GetSession()->GetSecurity() < SEC_MODERATOR)
+        {
+            LOG_ERROR("network.opcode", "%s attempt open mailbox in cheating way.", _player->GetName().c_str());
+            return false;
+        }
     }
     else if (guid.IsGameObject())
     {
